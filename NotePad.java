@@ -1,31 +1,35 @@
-package calendar;
+ package calendar;
 
-import java.awt.*; 
-import java.awt.event.*; import java.util.*; 
+import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
 
-import javax.swing.*; 
-import javax.swing.event.*; 
+import javax.swing.*;
 
-import java.io.*;  
-public class NotePad extends JPanel implements ActionListener,ItemListener { 
-	
-    JTextArea text;                 
-    JButton saveDaily=new JButton("保存日志");
-    JButton deleteDaily=new JButton("删除日志");   
-    Hashtable table;                
-    JLabel jl;   //信息条
-    JPanel p1=new JPanel();
-    JPanel p2=new JPanel();
-    int year,month,day;            
-    File file;                     
-    CalendarPad calendar;
-    Choice list1=new Choice();   //列表表示字体
-	Choice list2=new Choice();     //列表表示字大小
+public class NotePad extends JPanel implements ActionListener,MouseListener,ItemListener {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	JPopupMenu popup=new JPopupMenu();
+	JMenuItem cut=new JMenuItem("剪切");
+	JMenuItem copy=new JMenuItem("复制");
+	JMenuItem paste=new JMenuItem("粘贴");
+	JTextField ShowMessage=new JTextField();
+	JTextField time=new JTextField(10);
+	JTextArea ta=new JTextArea(5,10);
+	JPanel p1=new JPanel();
+	JPanel p2=new JPanel();
+	JPanel p3=new JPanel();
+	Choice list1=new Choice();
+	Choice list2=new Choice();
 	JButton btn=new JButton("颜色");
+	JLabel labl=new JLabel("事件发生时间（hh:mm）：");
 	String Size[]={"10","12","14","16","18","20","22","24","26","28","30","32","34","36"};
 	
-    public NotePad(CalendarPad calendar){
-    	GraphicsEnvironment ge=GraphicsEnvironment.getLocalGraphicsEnvironment();
+	
+	public NotePad(){
+		GraphicsEnvironment ge=GraphicsEnvironment.getLocalGraphicsEnvironment();
 		String fontname[]=ge.getAvailableFontFamilyNames();
 		for(int i=0;i<fontname.length;i++){
 			list1.add(fontname[i]);
@@ -33,152 +37,45 @@ public class NotePad extends JPanel implements ActionListener,ItemListener {
 		for(int i=0;i<Size.length;i++){
 			list2.add(Size[i]);
 		}
-        this.calendar=calendar;     
-        year=calendar.getYear();    
-        month=calendar.getMonth();   
-        day=calendar.getDay();; 
-        table=calendar.getHashtable();     
-        file=calendar.getFile(); 
-        jl=new JLabel(""+year+"年"+month+"月"+day+"日",JLabel.CENTER);    
-        jl.setFont(new Font("TimesRoman",Font.BOLD,16));   
-        jl.setForeground(Color.blue);
-        text=new JTextArea(10,10); 
-        saveDaily.addActionListener(this);     
-        deleteDaily.addActionListener(this); 
-        btn.addActionListener(this);
+		cut.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_X,InputEvent.CTRL_MASK));
+		copy.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C,InputEvent.CTRL_MASK));
+		paste.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_V,InputEvent.CTRL_MASK));
+		popup.add(cut);
+		popup.add(copy);
+		popup.add(paste);
+		p1.add(list1);
+		p1.add(list2);
+		p1.add(btn);
+		p3.add(labl);
+		p3.add(time);
+		setLayout(new BorderLayout());
+		add(ShowMessage,BorderLayout.NORTH);
+		p2.setLayout(new BorderLayout());
+		p2.add(new JScrollPane(ta),BorderLayout.CENTER);
+		p2.add(p3,BorderLayout.SOUTH);
+		add(p2,BorderLayout.CENTER);
+		add(p1,BorderLayout.SOUTH);
+		setBounds(0,0,600,600);
+		setVisible(true);
+		btn.addActionListener(this);
 		list1.addItemListener(this);
 		list2.addItemListener(this);
-        
-        p1.add(list1);
-        p1.add(list2);
-        p1.add(btn);
-        p2.setLayout(new BorderLayout());
-        p2.add(new JScrollPane(text),BorderLayout.CENTER);
-        p2.add(p1,BorderLayout.SOUTH);
-        setLayout(new BorderLayout()); 
-        JPanel pSouth=new JPanel();          
-        add(jl,BorderLayout.NORTH);
-        pSouth.add(saveDaily);     
-        pSouth.add(deleteDaily); 
-        add(pSouth,BorderLayout.SOUTH); 
-        add(p2,BorderLayout.CENTER);   
-     } 
-     public void actionPerformed(ActionEvent e){  
-        if(e.getSource()==saveDaily){ 
-    	    saveDaily(year,month,day);      
-        } 
-        else if(e.getSource()==deleteDaily){ 
-    	    deleteDaily(year,month,day);      
-    	} 
-        if(e.getSource()==btn){
-			Color newColor=JColorChooser.showDialog(this, "选择颜色", text.getForeground());
-			if(newColor!=null){
-				text.setForeground(newColor);
-			}
-		}
-     } 
-     public void setYear(int year){ 
-         this.year=year;  
-     } 
-     public int getYear(){ 
-         return year;  
-     } 
-     public void setMonth(int month){ 
-    	 this.month=month;  
-     }  
-     public int getMonth(){ 
-         return month;   
-     }  
-     public void setDay(int day){ 
-         this.day=day; 
-     } 
-     public int getDay(){ 
-         return day;   
-     } 
-     public void setJL(int year,int month,int day){ //设置信息条
-         jl.setText(""+year+"年"+month+"月"+day+"日");    
-     } 
-     public void setNote(String s){             //设置文本内容
-         text.setText(s);   
-     } 
-     public void getDaily(int year,int month,int day){ //获取日志
-         String key=""+year+""+month+""+day;       
-         try 
-          { 
-              FileInputStream   inOne=new FileInputStream(file); 
-              ObjectInputStream inTwo=new ObjectInputStream(inOne);              
-              table=(Hashtable)inTwo.readObject();                      
-              inOne.close();              
-              inTwo.close();             
-           }catch(Exception ee) { }              
-             
-       if(table.containsKey(key)){ 
-              String m=""+year+"年"+month+"月"+day+"这一天有日志记载,想看吗?"; 
-              int ok=JOptionPane.showConfirmDialog(this,m,"询问",JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE);                
-              if(ok==JOptionPane.YES_OPTION){ 
-                  text.setText((String)table.get(key));                 
-              }                
-              else                  
-                 text.setText("");
-                                     
-                          
-        }        
-        else          
-            text.setText("无记录");
-                      
-     } 
-     public void saveDaily(int year,int month,int day){ 
-	     String daily=text.getText();   //日志内容
-         String key=""+year+""+month+""+day; 
-         String m=""+year+"年"+month+"月"+day+"日"+"保存日志吗?"; 
-         int ok=JOptionPane.showConfirmDialog(this,m,"询问",JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE);        
-         if(ok==JOptionPane.YES_OPTION){  
-        	  try{ 
-        		  FileInputStream   inOne=new FileInputStream(file); 
-        		  ObjectInputStream inTwo=new ObjectInputStream(inOne);             
-        		  table=(Hashtable)inTwo.readObject();             
-        		  inOne.close();              
-        		  inTwo.close(); 
-        		  table.put(key,daily);                                             
-        		  FileOutputStream out=new FileOutputStream(file); 
-        		  ObjectOutputStream objectOut=new ObjectOutputStream(out);              
-        		  objectOut.writeObject(table);             
-        		  objectOut.close();             
-        		  out.close();           
-              } catch(Exception ee){}
-          }
-     }
-    
-  
-     public void deleteDaily(int year,int month,int day){
-    	 String key=""+year+""+month+""+day;         
-         if(table.containsKey(key)) { 
-        	 String m="删除"+year+"年"+month+"月"+day+"日的日志吗?"; 
-             int ok=JOptionPane.showConfirmDialog(this,m,"询问",JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);            
-             if(ok==JOptionPane.YES_OPTION){
-            	 try               
-                  { 
-                   FileInputStream   inOne=new FileInputStream(file); 
-                   ObjectInputStream inTwo=new ObjectInputStream(inOne);                
-                   table=(Hashtable)inTwo.readObject();                
-                   inOne.close();                 
-                   inTwo.close(); 
-                   table.remove(key);                                                        
-                   FileOutputStream out=new FileOutputStream(file); 
-                   ObjectOutputStream objectOut=new ObjectOutputStream(out);               
-                   objectOut.writeObject(table);                
-                   objectOut.close();                 
-                   out.close(); 
-                   text.setText(null);               
-            	 } catch(Exception ee){}             
-            }          
-         }        
-         else          
-         {              
-            String m=""+year+"年"+month+"月"+day+"日"+"无日志记录"; 
-            JOptionPane.showMessageDialog(this,m,"提示",JOptionPane.WARNING_MESSAGE);          
-         }   
-      }
+		cut.addActionListener(this);
+		copy.addActionListener(this);
+		paste.addActionListener(this);
+		ta.addMouseListener(this);
+		
+	}
+	
+
+	public void setMessage(int year,int month,int day){
+		ShowMessage.setText(year+"年"+month+"月"+day+"日");
+		ShowMessage.setForeground(Color.blue);
+		ShowMessage.setFont(new Font("宋体",Font.BOLD,15));
+		
+	}
+	
+
 	@Override
 	public void itemStateChanged(ItemEvent e) {
 		// TODO Auto-generated method stub
@@ -186,6 +83,180 @@ public class NotePad extends JPanel implements ActionListener,ItemListener {
 		String name=list1.getSelectedItem();
 		int n2=Integer.parseInt(n1);
 		Font f=new Font(name,Font.PLAIN,n2);
-		text.setFont(f);
-	}  
-  } 
+		ta.setFont(f);
+	}
+
+	@Override
+	public void mouseClicked(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void mousePressed(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent e) {
+		// TODO Auto-generated method stub
+		if(e.getButton()==MouseEvent.BUTTON3){
+			popup.show(ta,e.getX(),e.getY());
+		}
+		if(e.getButton()==MouseEvent.BUTTON1){
+			popup.setVisible(false);
+		}
+	}
+
+	@Override
+	public void mouseEntered(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void mouseExited(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		// TODO Auto-generated method stub
+		if(e.getSource()==cut){
+			cut();
+		}
+		if(e.getSource()==copy){
+			copy();
+		}
+		if(e.getSource()==paste){
+			paste();
+		}
+		if(e.getSource()==btn){
+			Color newColor=JColorChooser.showDialog(this, "选择颜色", ta.getForeground());
+			if(newColor!=null){
+				ta.setForeground(newColor);
+			}
+		}
+		
+	}
+	public void cut(){
+		ta.cut();
+		popup.setVisible(false);
+	}
+	public void copy(){
+		ta.copy();
+		popup.setVisible(false);
+	}
+	public void paste(){
+		ta.paste();
+		popup.setVisible(false);
+	}
+	
+	public void savefile(File dir,int year,int month,int day){
+		String dailyRecord=time.getText()+"#"+ta.getText()+"#";
+		String fileName=""+year+""+month+""+day+".txt";
+		String key=""+year+""+month+""+day;
+		String dialyFile[]=dir.list();
+		boolean b=false;
+		for(int i=0;i<dialyFile.length;i++){
+			if(dialyFile[i].startsWith(key)){
+				b=true;
+				break;
+			}
+		}
+		if(b){
+			int n=JOptionPane.showConfirmDialog(this, ""+year+"年"+month+"月"+day+"日"+
+		     "已经"+ "有日志存在，是否添加日志？","确认对话框",JOptionPane.YES_NO_OPTION);
+			if(n==JOptionPane.YES_OPTION){
+				try{
+					File file=new File(dir,fileName);
+					RandomAccessFile out=new RandomAccessFile(file,"rw");
+					long end=out.length();
+					byte[] bb=dailyRecord.getBytes();
+					out.seek(end);
+					out.write(bb);
+					out.close();
+				}catch(IOException e){}
+				ta.setText("");
+			}
+			else{
+				ta.setText("");
+			}
+		}
+		else{
+			try{
+				File file=new File(dir,fileName);
+				FileWriter fw=new FileWriter(file);
+				BufferedWriter bw=new BufferedWriter(fw);
+				bw.write(dailyRecord);
+				bw.close();
+				fw.close();
+			}catch(IOException e){}
+			JOptionPane.showMessageDialog(this, "添加日志成功", "消息对话框", JOptionPane.INFORMATION_MESSAGE);
+			ta.setText("");
+			time.setText("");
+		}
+	}
+	
+	public void deletefile(File dir,int year,int month,int day){
+		String key=""+year+""+month+""+day;
+		String dialyFile[]=dir.list();
+		boolean b=false;
+		for(int i=0;i<dialyFile.length;i++){
+			if(dialyFile[i].startsWith(key)){
+				b=true;
+				break;
+			}
+		}
+		if(b){
+			int n=JOptionPane.showConfirmDialog(this, "是否删除"+year+"年"+month+"月"+day+"日的日志？"
+		     ,"确认对话框",JOptionPane.YES_NO_OPTION);
+			if(n==JOptionPane.YES_OPTION){
+				try{
+					String fileName=""+year+""+month+""+day+".txt";
+					File file=new File(dir,fileName);
+					file.delete();
+				}catch(Exception e){}
+				ta.setText("");
+				}
+		}
+		else{
+			JOptionPane.showMessageDialog(this, ""+year+"年"+month+"月"+day+"日无日志！",
+					"消息对话框", JOptionPane.INFORMATION_MESSAGE);
+		}
+	}
+	public void readfile(File dir,int year,int month,int day){
+		String fileName=""+year+""+month+""+day+".txt";
+		String key=""+year+""+month+""+day;
+		String dialyFile[]=dir.list();
+		boolean b=false;
+		for(int i=0;i<dialyFile.length;i++){
+			if(dialyFile[i].startsWith(key)){
+				b=true;
+				break;
+			}
+		}
+		if(b){
+			ta.setText("");
+			time.setText("");
+			try{
+				File file=new File(dir,fileName);
+				FileReader inOne=new FileReader(file);
+				BufferedReader inTwo=new BufferedReader(inOne);
+				String s;
+				while((s=inTwo.readLine())!=null){
+					ta.append(s+"\n");
+				}
+				inOne.close();
+				inTwo.close();
+			}catch(IOException e){}
+		}
+		else{
+			JOptionPane.showMessageDialog(this, ""+year+"年"+month+"月"+day+"日无日志！",
+					"消息对话框", JOptionPane.INFORMATION_MESSAGE);
+		}
+	}
+	
+}
